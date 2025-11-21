@@ -76,6 +76,22 @@ paths:
                       en: 'Organic Yogurt'
                       fr: 'Yaourt Biologique'
                     country: 'ch'
+                    nutrients:
+                      energy:
+                        per_hundred: 250
+                        unit: 'kJ'
+                      sugars:
+                        per_hundred: 4.5
+                        unit: 'g'
+                      proteins:
+                        per_hundred: 3.5
+                        unit: 'g'
+                      fats:
+                        per_hundred: 1.5
+                        unit: 'g'
+                    images:
+                      - url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
+                        thumb_url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -251,6 +267,13 @@ paths:
                       name_translations:
                         en: 'Organic Yogurt'
                       country: 'ch'
+                      nutrients:
+                        sugars:
+                          per_hundred: 4.5
+                          unit: 'g'
+                      images:
+                        - url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
+                          thumb_url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
                   - id: '2031'
                     type: 'product'
                     attributes:
@@ -258,6 +281,13 @@ paths:
                       name_translations:
                         en: 'Swiss Chocolate'
                       country: 'ch'
+                      nutrients:
+                        sugars:
+                          per_hundred: 55
+                          unit: 'g'
+                      images:
+                        - url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
+                          thumb_url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
                 links:
                   self: 'https://www.foodrepo.org/api/v3/products?page[number]=1&page[size]=20'
                   next: 'https://www.foodrepo.org/api/v3/products?page[number]=2&page[size]=20'
@@ -362,13 +392,20 @@ paths:
                   - name_translations
                   - barcode
                   - nutrients.sugars.per_hundred
-              size: 20
+                  - country
+              size: 10
               query:
-                query_string:
-                  fields:
-                    - name_translations.fr
-                  query: 'Jogurt~ OR Yaourt~'
-              sort: 'nutrients.sugars.per_hundred'
+                bool:
+                  must:
+                    - query_string:
+                        fields:
+                          - name_translations.en
+                        query: 'Chocolate'
+                  filter:
+                    - term:
+                        country: 'ch'
+              sort:
+                - nutrients.sugars.per_hundred: 'asc'
       responses:
         '200':
           description: |
@@ -633,6 +670,9 @@ components:
                   thumb_url:
                     type: string
                     format: uri
+              example:
+                - url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
+                  thumb_url: 'https://d2v5oodgkvnw88.cloudfront.net/uploads_production/image/data/97923/thumb_7613269323761.jpg?v=1510137223'
 
     ErrorResponse:
       type: object
