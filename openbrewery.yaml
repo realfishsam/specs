@@ -1,0 +1,531 @@
+openapi: 3.0.3
+info:
+  title: Open Brewery DB API
+  description: |
+    Open Brewery DB is a free dataset and API with public information on breweries, cideries, brewpubs, and bottleshops.
+    
+    This API provides endpoints to list, search, and filter breweries by various criteria including location, type, and name.
+  version: 1.0.0
+  contact:
+    name: Open Brewery DB
+    url: https://www.openbrewerydb.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.openbrewerydb.org/v1
+    description: Production API Server
+
+tags:
+  - name: Breweries
+    description: Operations related to brewery data
+  - name: Search
+    description: Search and autocomplete endpoints
+  - name: Metadata
+    description: Metadata about the dataset
+
+paths:
+  /breweries/{obdb-id}:
+    get:
+      summary: Get a single brewery
+      description: Retrieve detailed information about a specific brewery by its unique ID.
+      operationId: getBreweryById
+      tags:
+        - Breweries
+      parameters:
+        - name: obdb-id
+          in: path
+          required: true
+          description: Unique identifier for the brewery
+          schema:
+            type: string
+          example: 5128df48-79fc-4f0f-8b52-d06be54d0cec
+      responses:
+        '200':
+          description: Brewery found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brewery'
+        '404':
+          description: Brewery not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /breweries:
+    get:
+      summary: List breweries
+      description: |
+        Returns a list of breweries with optional filtering and pagination.
+        
+        Supports filtering by city, country, distance, IDs, name, state, postal code, and type.
+        Results can be paginated and sorted.
+      operationId: listBreweries
+      tags:
+        - Breweries
+      parameters:
+        - name: by_city
+          in: query
+          description: Filter breweries by city. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: san_diego
+        - name: by_country
+          in: query
+          description: Filter breweries by country. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: united_states
+        - name: by_dist
+          in: query
+          description: Sort results by distance from an origin point (latitude,longitude).
+          schema:
+            type: string
+            pattern: '^-?\d+\.?\d*,-?\d+\.?\d*$'
+          example: 38.8977,-77.0365
+        - name: by_ids
+          in: query
+          description: Comma-separated list of brewery IDs to retrieve.
+          schema:
+            type: string
+          example: 5128df48-79fc-4f0f-8b52-d06be54d0cec,9c5a66c8-cc13-416f-a5d9-0a769c87d318
+        - name: by_name
+          in: query
+          description: Filter breweries by name. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: cooper
+        - name: by_state
+          in: query
+          description: Filter breweries by state. Full state name required, no abbreviations. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: california
+        - name: by_postal
+          in: query
+          description: |
+            Filter breweries by postal code. 
+            May be filtered by basic (5 digit) postal code or postal+4 (9 digit) code.
+            If filtering by postal+4, include a hyphen or underscore.
+          schema:
+            type: string
+          examples:
+            basic:
+              value: 44107
+              summary: Basic 5-digit postal code
+            postal_plus_4:
+              value: 44107-4020
+              summary: Postal+4 with hyphen
+        - name: by_type
+          in: query
+          description: Filter by type of brewery.
+          schema:
+            type: string
+            enum:
+              - micro
+              - nano
+              - regional
+              - brewpub
+              - large
+              - planning
+              - bar
+              - contract
+              - proprietor
+              - closed
+          examples:
+            micro:
+              value: micro
+              summary: Most craft breweries (e.g., Samuel Adams)
+            nano:
+              value: nano
+              summary: Extremely small brewery, typically only distributes locally
+            regional:
+              value: regional
+              summary: Regional location of an expanded brewery
+            brewpub:
+              value: brewpub
+              summary: Beer-focused restaurant with on-premise brewery
+        - name: page
+          in: query
+          description: The offset or page of breweries to return.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: per_page
+          in: query
+          description: Number of breweries to return per page. Default is 50, maximum is 200.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          example: 50
+        - name: sort
+          in: query
+          description: |
+            Sort the results by one or more fields.
+            Use 'asc' for ascending order or 'desc' for descending order.
+            Format: field:direction (e.g., name:asc, city:desc)
+            Note: by_dist does not work with the sort filter.
+          schema:
+            type: string
+          examples:
+            name_asc:
+              value: name:asc
+              summary: Sort by name ascending
+            type_desc:
+              value: type:desc
+              summary: Sort by type descending
+      responses:
+        '200':
+          description: List of breweries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brewery'
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /breweries/random:
+    get:
+      summary: Get random brewery
+      description: Retrieve one or more random breweries from the database.
+      operationId: getRandomBrewery
+      tags:
+        - Breweries
+      parameters:
+        - name: size
+          in: query
+          description: Number of random breweries to return. Default is 1, maximum is 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 1
+          example: 3
+      responses:
+        '200':
+          description: Random brewery/breweries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brewery'
+
+  /breweries/search:
+    get:
+      summary: Search breweries
+      description: |
+        Search for breweries based on a search term.
+        The search performs partial, case-insensitive matching against brewery names.
+        Returns an empty array when no breweries match the search query.
+      operationId: searchBreweries
+      tags:
+        - Search
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search term to match against brewery names. Supports partial matches. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: dog
+        - name: per_page
+          in: query
+          description: Number of results per page. Default is 50, maximum is 200.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          example: 50
+        - name: page
+          in: query
+          description: Page number for pagination.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brewery'
+        '400':
+          description: Bad request - missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /breweries/autocomplete:
+    get:
+      summary: Autocomplete brewery names
+      description: |
+        ⚠️ DEPRECATED: This endpoint is deprecated and will be removed from v1 by the end of the year. 
+        Please use the Search endpoint instead.
+        
+        Returns a list of names and IDs of breweries based on a search term.
+        This endpoint is typically used for drop-down selection.
+        The maximum number of breweries returned is 15.
+      operationId: autocompleteBreweries
+      deprecated: true
+      tags:
+        - Search
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search term to match against brewery names. Use underscores or URL encoding for spaces.
+          schema:
+            type: string
+          example: dog
+      responses:
+        '200':
+          description: Autocomplete results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 15
+                items:
+                  $ref: '#/components/schemas/BreweryAutocomplete'
+        '400':
+          description: Bad request - missing or invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /breweries/meta:
+    get:
+      summary: Get breweries metadata
+      description: |
+        Retrieve metadata about the breweries dataset.
+        Supports the same filters as the List Breweries endpoint.
+        
+        Returns information such as total count and page information for the filtered dataset.
+      operationId: getBreweriesMetadata
+      tags:
+        - Metadata
+      parameters:
+        - name: by_city
+          in: query
+          description: Filter metadata by city.
+          schema:
+            type: string
+        - name: by_country
+          in: query
+          description: Filter metadata by country.
+          schema:
+            type: string
+          example: south_korea
+        - name: by_state
+          in: query
+          description: Filter metadata by state.
+          schema:
+            type: string
+        - name: by_postal
+          in: query
+          description: Filter metadata by postal code.
+          schema:
+            type: string
+        - name: by_type
+          in: query
+          description: Filter metadata by brewery type.
+          schema:
+            type: string
+            enum:
+              - micro
+              - nano
+              - regional
+              - brewpub
+              - large
+              - planning
+              - bar
+              - contract
+              - proprietor
+              - closed
+          example: micro
+        - name: by_name
+          in: query
+          description: Filter metadata by brewery name.
+          schema:
+            type: string
+        - name: by_ids
+          in: query
+          description: Filter metadata by comma-separated brewery IDs.
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for metadata.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of breweries per page for metadata calculation.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: Metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metadata'
+
+components:
+  schemas:
+    Brewery:
+      type: object
+      description: Detailed information about a brewery
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the brewery
+          example: 5128df48-79fc-4f0f-8b52-d06be54d0cec
+        name:
+          type: string
+          description: Brewery name
+          example: Ballast Point Brewing Company
+        brewery_type:
+          type: string
+          description: Type of brewery
+          enum:
+            - micro
+            - nano
+            - regional
+            - brewpub
+            - large
+            - planning
+            - bar
+            - contract
+            - proprietor
+            - closed
+          example: large
+        address_1:
+          type: string
+          nullable: true
+          description: Primary street address
+          example: 9045 Carroll Way
+        address_2:
+          type: string
+          nullable: true
+          description: Secondary address line
+          example: Suite 100
+        address_3:
+          type: string
+          nullable: true
+          description: Third address line
+          example: null
+        city:
+          type: string
+          description: City name
+          example: San Diego
+        state_province:
+          type: string
+          description: State or province
+          example: California
+        postal_code:
+          type: string
+          description: Postal or ZIP code
+          example: 92121-2211
+        country:
+          type: string
+          description: Country name
+          example: United States
+        longitude:
+          type: number
+          nullable: true
+          description: Longitude coordinate
+          example: -117.1649
+        latitude:
+          type: number
+          nullable: true
+          description: Latitude coordinate
+          example: 32.9085
+        phone:
+          type: string
+          nullable: true
+          description: Contact phone number
+          example: 8585790500
+        website_url:
+          type: string
+          nullable: true
+          description: Brewery website URL
+          example: http://www.ballastpoint.com
+        state:
+          type: string
+          description: State abbreviation or name
+          example: California
+        street:
+          type: string
+          nullable: true
+          description: Street address
+          example: 9045 Carroll Way
+
+    BreweryAutocomplete:
+      type: object
+      description: Simplified brewery information for autocomplete
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the brewery
+          example: 5128df48-79fc-4f0f-8b52-d06be54d0cec
+        name:
+          type: string
+          description: Brewery name
+          example: Ballast Point Brewing Company
+
+    Metadata:
+      type: object
+      description: Metadata about the breweries dataset
+      properties:
+        total:
+          type: integer
+          description: Total number of breweries matching the filter criteria
+          example: 8043
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        per_page:
+          type: integer
+          description: Number of breweries per page
+          example: 50
+
+    Error:
+      type: object
+      description: Error response
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: Brewery not found
+        error:
+          type: string
+          description: Error type
+          example: NotFoundError
