@@ -1,0 +1,642 @@
+openapi: 3.0.0
+info:
+  title: Spoonacular API
+  version: 1.0.0
+  description: The Spoonacular Nutrition, Recipe, and Food API allows you to access over 380,000 recipes, thousands of ingredients, 800,000 food products, and 100,000 menu items. Our food ontology and semantic recipe search engine makes it possible to search for recipes using natural language queries, such as "gluten free brownies without sugar" or "low fat vegan cupcakes." You can automatically calculate the nutritional information for any recipe, analyze recipe costs, visualize ingredient lists, find recipes for what's in your fridge, find recipes based on special diets, nutritional requirements, or favorite ingredients, classify recipes into types and cuisines, convert ingredient amounts, or even compute an entire meal plan. With our powerful API, you can create food apps and services that will help your users eat better.
+servers:
+  - url: https://api.spoonacular.com
+externalDocs:
+  description: Find out more about Spoonacular API
+  url: https://spoonacular.com/food-api/docs
+tags:
+  - name: Recipes
+    description: Manage and search recipes
+  - name: Search
+    description: Search operations
+paths:
+  /recipes/complexSearch:
+    get:
+      tags:
+        - Recipes
+        - Search
+      summary: Search Recipes
+      description: |
+        Search through thousands of recipes using advanced filtering and ranking. NOTE: This method combines searching by query, by ingredients, and by nutrients into one endpoint.
+
+        If you are making a "what's in your fridge?" style app and require more filters than the Search Recipes by Ingredients endpoint allows, use the sort parameters max-used-ingredients or min-missing-ingredients with this endpoint instead.
+      parameters:
+        - name: query
+          in: query
+          description: The (natural language) recipe search query.
+          schema:
+            type: string
+            example: pasta
+        - name: cuisine
+          in: query
+          description: The cuisine(s) of the recipes. One or more, comma separated (will be interpreted as 'OR').
+          schema:
+            type: string
+            example: italian
+        - name: excludeCuisine
+          in: query
+          description: The cuisine(s) the recipes must not match. One or more, comma separated (will be interpreted as 'AND').
+          schema:
+            type: string
+            example: greek
+        - name: diet
+          in: query
+          description: The diet(s) for which the recipes must be suitable. You can specify multiple with comma meaning AND connection. You can specify multiple diets separated with a pipe | meaning OR connection.
+          schema:
+            type: string
+            example: vegetarian
+        - name: intolerances
+          in: query
+          description: A comma-separated list of intolerances. All recipes returned must not contain ingredients that are not suitable for people with the intolerances entered.
+          schema:
+            type: string
+            example: gluten
+        - name: equipment
+          in: query
+          description: The equipment required. Multiple values will be interpreted as 'or'.
+          schema:
+            type: string
+            example: pan
+        - name: includeIngredients
+          in: query
+          description: A comma-separated list of ingredients that should/must be used in the recipes.
+          schema:
+            type: string
+            example: tomato,cheese
+        - name: excludeIngredients
+          in: query
+          description: A comma-separated list of ingredients or ingredient types that the recipes must not contain.
+          schema:
+            type: string
+            example: eggs
+        - name: type
+          in: query
+          description: The type of recipe.
+          schema:
+            type: string
+            example: main course
+        - name: instructionsRequired
+          in: query
+          description: Whether the recipes must have instructions.
+          schema:
+            type: boolean
+            example: true
+        - name: fillIngredients
+          in: query
+          description: Add information about the ingredients and whether they are used or missing in relation to the query.
+          schema:
+            type: boolean
+            example: false
+        - name: addRecipeInformation
+          in: query
+          description: If set to true, you get more information about the recipes returned.
+          schema:
+            type: boolean
+            example: false
+        - name: addRecipeInstructions
+          in: query
+          description: If set to true, you get analyzed instructions for each recipe returned.
+          schema:
+            type: boolean
+            example: false
+        - name: addRecipeNutrition
+          in: query
+          description: If set to true, you get nutritional information about each recipes returned.
+          schema:
+            type: boolean
+            example: false
+        - name: author
+          in: query
+          description: The username of the recipe author.
+          schema:
+            type: string
+            example: coffeebean
+        - name: tags
+          in: query
+          description: User defined tags that have to match. The author param has to be set.
+          schema:
+            type: string
+            example: myCustomTag
+        - name: recipeBoxId
+          in: query
+          description: The id of the recipe box to which the search should be limited to.
+          schema:
+            type: integer
+            example: 2468
+        - name: titleMatch
+          in: query
+          description: Enter text that must be found in the title of the recipes.
+          schema:
+            type: string
+            example: Crock Pot
+        - name: maxReadyTime
+          in: query
+          description: The maximum time in minutes it should take to prepare and cook the recipe.
+          schema:
+            type: integer
+            example: 20
+        - name: minServings
+          in: query
+          description: The minimum amount of servings the recipe is for.
+          schema:
+            type: integer
+            example: 1
+        - name: maxServings
+          in: query
+          description: The maximum amount of servings the recipe is for.
+          schema:
+            type: integer
+            example: 8
+        - name: ignorePantry
+          in: query
+          description: Whether to ignore typical pantry items, such as water, salt, flour, etc.
+          schema:
+            type: boolean
+            example: true
+        - name: sort
+          in: query
+          description: The strategy to sort recipes by.
+          schema:
+            type: string
+            example: calories
+        - name: sortDirection
+          in: query
+          description: The direction in which to sort. Must be either 'asc' (ascending) or 'desc' (descending).
+          schema:
+            type: string
+            example: asc
+        - name: minCarbs
+          in: query
+          description: The minimum amount of carbohydrates in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 10
+        - name: maxCarbs
+          in: query
+          description: The maximum amount of carbohydrates in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minProtein
+          in: query
+          description: The minimum amount of protein in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 10
+        - name: maxProtein
+          in: query
+          description: The maximum amount of protein in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCalories
+          in: query
+          description: The minimum amount of calories the recipe must have per serving.
+          schema:
+            type: number
+            example: 50
+        - name: maxCalories
+          in: query
+          description: The maximum amount of calories the recipe can have per serving.
+          schema:
+            type: number
+            example: 800
+        - name: minFat
+          in: query
+          description: The minimum amount of fat in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 1
+        - name: maxFat
+          in: query
+          description: The maximum amount of fat in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minAlcohol
+          in: query
+          description: The minimum amount of alcohol in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxAlcohol
+          in: query
+          description: The maximum amount of alcohol in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCaffeine
+          in: query
+          description: The minimum amount of caffeine in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxCaffeine
+          in: query
+          description: The maximum amount of caffeine in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCopper
+          in: query
+          description: The minimum amount of copper in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxCopper
+          in: query
+          description: The maximum amount of copper in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCalcium
+          in: query
+          description: The minimum amount of calcium in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxCalcium
+          in: query
+          description: The maximum amount of calcium in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCholine
+          in: query
+          description: The minimum amount of choline in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxCholine
+          in: query
+          description: The maximum amount of choline in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minCholesterol
+          in: query
+          description: The minimum amount of cholesterol in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxCholesterol
+          in: query
+          description: The maximum amount of cholesterol in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minFluoride
+          in: query
+          description: The minimum amount of fluoride in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxFluoride
+          in: query
+          description: The maximum amount of fluoride in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minSaturatedFat
+          in: query
+          description: The minimum amount of saturated fat in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxSaturatedFat
+          in: query
+          description: The maximum amount of saturated fat in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminA
+          in: query
+          description: The minimum amount of Vitamin A in IU the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminA
+          in: query
+          description: The maximum amount of Vitamin A in IU the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminC
+          in: query
+          description: The minimum amount of Vitamin C milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminC
+          in: query
+          description: The maximum amount of Vitamin C in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminD
+          in: query
+          description: The minimum amount of Vitamin D in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminD
+          in: query
+          description: The maximum amount of Vitamin D in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminE
+          in: query
+          description: The minimum amount of Vitamin E in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminE
+          in: query
+          description: The maximum amount of Vitamin E in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminK
+          in: query
+          description: The minimum amount of Vitamin K in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminK
+          in: query
+          description: The maximum amount of Vitamin K in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB1
+          in: query
+          description: The minimum amount of Vitamin B1 in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB1
+          in: query
+          description: The maximum amount of Vitamin B1 in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB2
+          in: query
+          description: The minimum amount of Vitamin B2 in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB2
+          in: query
+          description: The maximum amount of Vitamin B2 in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB5
+          in: query
+          description: The minimum amount of Vitamin B5 in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB5
+          in: query
+          description: The maximum amount of Vitamin B5 in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB3
+          in: query
+          description: The minimum amount of Vitamin B3 in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB3
+          in: query
+          description: The maximum amount of Vitamin B3 in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB6
+          in: query
+          description: The minimum amount of Vitamin B6 in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB6
+          in: query
+          description: The maximum amount of Vitamin B6 in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minVitaminB12
+          in: query
+          description: The minimum amount of Vitamin B12 in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxVitaminB12
+          in: query
+          description: The maximum amount of Vitamin B12 in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minFiber
+          in: query
+          description: The minimum amount of fiber in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxFiber
+          in: query
+          description: The maximum amount of fiber in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minFolate
+          in: query
+          description: The minimum amount of folate in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxFolate
+          in: query
+          description: The maximum amount of folate in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minFolicAcid
+          in: query
+          description: The minimum amount of folic acid in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxFolicAcid
+          in: query
+          description: The maximum amount of folic acid in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minIodine
+          in: query
+          description: The minimum amount of iodine in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxIodine
+          in: query
+          description: The maximum amount of iodine in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minIron
+          in: query
+          description: The minimum amount of iron in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxIron
+          in: query
+          description: The maximum amount of iron in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minMagnesium
+          in: query
+          description: The minimum amount of magnesium in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxMagnesium
+          in: query
+          description: The maximum amount of magnesium in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minManganese
+          in: query
+          description: The minimum amount of manganese in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxManganese
+          in: query
+          description: The maximum amount of manganese in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minPhosphorus
+          in: query
+          description: The minimum amount of phosphorus in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxPhosphorus
+          in: query
+          description: The maximum amount of phosphorus in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minPotassium
+          in: query
+          description: The minimum amount of potassium in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxPotassium
+          in: query
+          description: The maximum amount of potassium in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minSelenium
+          in: query
+          description: The minimum amount of selenium in micrograms the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxSelenium
+          in: query
+          description: The maximum amount of selenium in micrograms the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minSodium
+          in: query
+          description: The minimum amount of sodium in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxSodium
+          in: query
+          description: The maximum amount of sodium in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minSugar
+          in: query
+          description: The minimum amount of sugar in grams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxSugar
+          in: query
+          description: The maximum amount of sugar in grams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: minZinc
+          in: query
+          description: The minimum amount of zinc in milligrams the recipe must have per serving.
+          schema:
+            type: number
+            example: 0
+        - name: maxZinc
+          in: query
+          description: The maximum amount of zinc in milligrams the recipe can have per serving.
+          schema:
+            type: number
+            example: 100
+        - name: offset
+          in: query
+          description: The number of results to skip (between 0 and 900).
+          schema:
+            type: integer
+            example: 0
+        - name: number
+          in: query
+          description: The number of expected results (between 1 and 100).
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offset:
+                    type: integer
+                  number:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        image:
+                          type: string
+                        imageType:
+                          type: string
+                  totalResults:
+                    type: integer
