@@ -1,0 +1,671 @@
+openapi: 3.0.3
+info:
+  title: The Open Food Repo API
+  description: |
+    The Open Food Repo API provides access to a comprehensive database of food products with nutritional information, images, and more.
+    
+    Created by The Open Food Repo team. See more at https://www.foodrepo.org
+  version: '3.0'
+  contact:
+    name: The Open Food Repo
+    url: https://www.foodrepo.org
+  license:
+    name: Creative Commons Attribution 4.0 International License
+    url: https://creativecommons.org/licenses/by/4.0/
+
+servers:
+  - url: https://www.foodrepo.org/api/v3
+    description: Production server
+
+externalDocs:
+  description: Visit The Open Food Repo website
+  url: https://www.foodrepo.org
+
+tags:
+  - name: Products
+    description: Operations related to food products
+  - name: Search
+    description: Search and query food products
+  - name: Users
+    description: User authentication and profile operations
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /products/{id}:
+    get:
+      summary: Returns a single product from The Open Food Repo
+      description: |
+        ⚠️ **DO NOT USE THIS ENDPOINT TO CRAWL OUR DATABASE** ⚠️
+        
+        For those who would like to get all products, please use the `/products` endpoint instead of this one. 
+        With compression enabled and using the max page size, you will notice a significant speed improvement.
+        
+        We of course won't stop you from using this endpoint to crawl, but we'd like to strongly discourage it 
+        for anything other than getting a few products whose IDs are known to your app in advance.
+      operationId: getProductById
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          description: ID of the Product
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 2030
+      responses:
+        '200':
+          description: OK - RESPONSE.data is a Product
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+              example:
+                data:
+                  id: '2030'
+                  type: 'product'
+                  attributes:
+                    barcode: '7610848337010'
+                    name_translations:
+                      en: 'Organic Yogurt'
+                      fr: 'Yaourt Biologique'
+                    country: 'ch'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Invalid product ID
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Update a product in The Open Food Repo
+      description: Update an existing product with new information or images
+      operationId: updateProduct
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          description: ID of the Product
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 2030
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                product[images_attributes][][data]:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: |
+                    The image files. The Swagger 2 interface doesn't allow uploading multiple files, 
+                    but the API allows it. Use the same parameter name for each file.
+      responses:
+        '204':
+          description: OK (no content) - Product successfully updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Invalid product ID
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/barcodes:
+    get:
+      summary: All barcodes by country and status
+      description: Retrieve a list of all product barcodes organized by country and status
+      operationId: getProductBarcodes
+      tags:
+        - Products
+      responses:
+        '200':
+          description: OK - List of barcodes by country and status
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        country:
+                          type: string
+                          example: 'ch'
+                        status:
+                          type: string
+                          example: 'verified'
+                        barcodes:
+                          type: array
+                          items:
+                            type: string
+                          example: ['7610848337010', '7610849657797']
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /products:
+    get:
+      summary: All products in the Open Food Repo database
+      description: |
+        This endpoint is the preferred way of crawling through our database, getting hundreds of products per request. 
+        Use the RESPONSE.links.next URL to iteratively get all products, one page at a time.
+      operationId: getProducts
+      tags:
+        - Products
+      parameters:
+        - name: excludes
+          in: query
+          description: Comma-separated list of fields to exclude from the result
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - images
+                - nutrients
+          style: form
+          explode: false
+          example: ['images', 'nutrients']
+        - name: barcodes
+          in: query
+          description: Comma-separated list of barcodes to search by, using boolean OR for multiple values
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+          example: ['7610848337010', '7610849657797']
+        - name: page[size]
+          in: query
+          description: Paging for the result set. Default products per page is 20. Maximum is 200
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+          example: 50
+        - name: page[number]
+          in: query
+          description: Paging for the result set. Default page number is 1
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+      responses:
+        '200':
+          description: |
+            OK - Each item in RESPONSE.data is a Product.
+            Information on the RESPONSE.links object provides pagination URLs.
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        format: uri
+                      next:
+                        type: string
+                        format: uri
+                      prev:
+                        type: string
+                        format: uri
+                      first:
+                        type: string
+                        format: uri
+                      last:
+                        type: string
+                        format: uri
+              example:
+                data:
+                  - id: '2030'
+                    type: 'product'
+                    attributes:
+                      barcode: '7610848337010'
+                      name_translations:
+                        en: 'Organic Yogurt'
+                      country: 'ch'
+                  - id: '2031'
+                    type: 'product'
+                    attributes:
+                      barcode: '7610849657797'
+                      name_translations:
+                        en: 'Swiss Chocolate'
+                      country: 'ch'
+                links:
+                  self: 'https://www.foodrepo.org/api/v3/products?page[number]=1&page[size]=20'
+                  next: 'https://www.foodrepo.org/api/v3/products?page[number]=2&page[size]=20'
+                  last: 'https://www.foodrepo.org/api/v3/products?page[number]=50&page[size]=20'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Submit a product to the Open Food Repo database
+      description: Create a new product entry in the database
+      operationId: createProduct
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - product[barcode]
+                - product[country]
+              properties:
+                product[barcode]:
+                  type: integer
+                  format: int64
+                  description: |
+                    The barcode of the product. Note that UPC-A (12 digits) will automatically 
+                    be converted into the compatible EAN-13 version.
+                  example: 7610848337010
+                product[country]:
+                  type: string
+                  minLength: 2
+                  maxLength: 2
+                  description: The country where the product was purchased (ISO 3166-1 alpha-2)
+                  example: 'ch'
+                product[images_attributes][][data]:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: |
+                    The image files. The Swagger 2 interface doesn't allow uploading multiple files, 
+                    but the API allows it. Use the same parameter name for each file.
+      responses:
+        '201':
+          description: The product was created
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Product'
+              example:
+                data:
+                  id: '2032'
+                  type: 'product'
+                  attributes:
+                    barcode: '7610848337010'
+                    country: 'ch'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /products/_search:
+    post:
+      summary: Search products using ElasticSearch
+      description: |
+        Perform advanced searches using the ElasticSearch DSL (Domain Specific Language).
+        This allows for complex queries with filters, sorting, and field selection.
+      operationId: searchProducts
+      tags:
+        - Search
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              type: object
+              description: A query using the ElasticSearch DSL
+              properties:
+                _source:
+                  type: object
+                  description: Specify which fields to include in the response
+                  properties:
+                    includes:
+                      type: array
+                      items:
+                        type: string
+                size:
+                  type: integer
+                  description: Number of results to return
+                query:
+                  type: object
+                  description: The search query
+                sort:
+                  type: string
+                  description: Field to sort results by
+            example:
+              _source:
+                includes:
+                  - name_translations
+                  - barcode
+                  - nutrients.sugars.per_hundred
+              size: 20
+              query:
+                query_string:
+                  fields:
+                    - name_translations.fr
+                  query: 'Jogurt~ OR Yaourt~'
+              sort: 'nutrients.sugars.per_hundred'
+      responses:
+        '200':
+          description: |
+            OK - The _source of each item in RESPONSE.hits.hits is a Product.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hits:
+                    type: object
+                    properties:
+                      total:
+                        type: object
+                        properties:
+                          value:
+                            type: integer
+                          relation:
+                            type: string
+                      hits:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _source:
+                              $ref: '#/components/schemas/Product'
+                            _score:
+                              type: number
+              example:
+                hits:
+                  total:
+                    value: 42
+                    relation: 'eq'
+                  hits:
+                    - _source:
+                        id: '2030'
+                        type: 'product'
+                        attributes:
+                          name_translations:
+                            fr: 'Yaourt Nature'
+                          barcode: '7610848337010'
+                          nutrients:
+                            sugars:
+                              per_hundred: 4.5
+                      _score: 1.234
+        '400':
+          description: Malformed query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me:
+    get:
+      summary: Get user information
+      description: Retrieve information about the currently authenticated user
+      operationId: getCurrentUser
+      tags:
+        - Users
+      responses:
+        '200':
+          description: |
+            OK - Returns the username and community reputation of current user
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      type:
+                        type: string
+                        example: 'user'
+                      attributes:
+                        type: object
+                        properties:
+                          username:
+                            type: string
+                            description: The username of current user
+                          reputation:
+                            type: integer
+                            description: The community reputation of current user
+              example:
+                data:
+                  id: '123'
+                  type: 'user'
+                  attributes:
+                    username: 'johndoe'
+                    reputation: 847
+        '400':
+          description: Malformed query
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/sign_in:
+    post:
+      summary: Log in user
+      description: Authenticate a user and receive an API token for the specified device
+      operationId: signInUser
+      tags:
+        - Users
+      security: []
+      parameters:
+        - name: user[email]
+          in: query
+          required: true
+          description: The user's email
+          schema:
+            type: string
+            format: email
+          example: 'user@example.com'
+        - name: user[password]
+          in: query
+          required: true
+          description: The user's password
+          schema:
+            type: string
+            format: password
+          example: 'mySecurePassword123'
+        - name: user[device_name]
+          in: query
+          required: true
+          description: The user's API-key device name
+          schema:
+            type: string
+          example: 'MyApp-iOS'
+      responses:
+        '200':
+          description: OK - Token for device
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: API token for authentication
+                      device_name:
+                        type: string
+              example:
+                data:
+                  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                  device_name: 'MyApp-iOS'
+        '400':
+          description: Malformed query
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Invalid email or password
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        API Key authentication. Obtain your API key by signing in via the `/users/sign_in` endpoint.
+        Include the token in the Authorization header.
+
+  schemas:
+    Product:
+      type: object
+      description: A food product with all associated information
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the product
+          example: '2030'
+        type:
+          type: string
+          example: 'product'
+        attributes:
+          type: object
+          properties:
+            barcode:
+              type: string
+              description: The product's barcode (EAN-13 or UPC)
+              example: '7610848337010'
+            name_translations:
+              type: object
+              description: Product name in different languages
+              additionalProperties:
+                type: string
+              example:
+                en: 'Organic Yogurt'
+                fr: 'Yaourt Biologique'
+                de: 'Bio-Joghurt'
+            country:
+              type: string
+              description: Country code where product was purchased (ISO 3166-1 alpha-2)
+              minLength: 2
+              maxLength: 2
+              example: 'ch'
+            nutrients:
+              type: object
+              description: Nutritional information per 100g/ml
+              properties:
+                energy:
+                  type: object
+                  properties:
+                    per_hundred:
+                      type: number
+                      description: Energy in kJ per 100g/ml
+                    unit:
+                      type: string
+                      example: 'kJ'
+                sugars:
+                  type: object
+                  properties:
+                    per_hundred:
+                      type: number
+                      description: Sugar content in g per 100g/ml
+                    unit:
+                      type: string
+                      example: 'g'
+                proteins:
+                  type: object
+                  properties:
+                    per_hundred:
+                      type: number
+                      description: Protein content in g per 100g/ml
+                    unit:
+                      type: string
+                      example: 'g'
+                fats:
+                  type: object
+                  properties:
+                    per_hundred:
+                      type: number
+                      description: Fat content in g per 100g/ml
+                    unit:
+                      type: string
+                      example: 'g'
+            images:
+              type: array
+              description: Product images
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  thumb_url:
+                    type: string
+                    format: uri
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                description: HTTP status code
+              title:
+                type: string
+                description: Error title
+              detail:
+                type: string
+                description: Detailed error message
+      example:
+        errors:
+          - status: '404'
+            title: 'Not Found'
+            detail: 'The requested product could not be found'
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API Key
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errors:
+              - status: '401'
+                title: 'Unauthorized'
+                detail: 'Invalid or missing API Key'
