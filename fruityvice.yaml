@@ -1,0 +1,416 @@
+openapi: 3.0.0
+info:
+  title: Fruityvice
+  description: A Java Spring based web service that serves information about all kind of fruits!
+  version: 1.0.0
+  contact:
+    name: Fruityvice
+  license:
+    name: MIT
+
+externalDocs:
+  description: Fruityvice API Documentation
+  url: https://www.fruityvice.com
+
+servers:
+  - url: https://www.fruityvice.com
+    description: Production server
+
+tags:
+  - name: Fruits
+    description: Operations related to fruit data
+  - name: Nutrition
+    description: Filter fruits by nutritional values
+  - name: Taxonomy
+    description: Filter fruits by taxonomic classification
+
+paths:
+  /api/fruit/{nutrition}:
+    get:
+      tags:
+        - Nutrition
+      summary: Request Fruits information by nutrition value
+      description: Get Fruits with given nutrition between min and max parameter. At least one query parameter has to be given.
+      operationId: getFruitsByNutrition
+      parameters:
+        - name: nutrition
+          in: path
+          required: true
+          description: The nutrition type to filter by (e.g., carbohydrates, protein, fat, calories, sugar)
+          schema:
+            type: string
+            enum:
+              - carbohydrates
+              - protein
+              - fat
+              - calories
+              - sugar
+          example: calories
+        - name: min
+          in: query
+          required: false
+          description: Optional minimum nutrition value
+          schema:
+            type: number
+            format: double
+            default: 0
+          example: 0
+        - name: max
+          in: query
+          required: false
+          description: Optional maximum nutrition value
+          schema:
+            type: number
+            format: double
+            default: 1000
+          example: 1000
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+              example:
+                - genus: Musa
+                  name: Banana
+                  id: 2
+                  family: Musaceae
+                  order: Zingiberales
+                  nutritions:
+                    carbohydrates: 22
+                    protein: 0
+                    fat: 0.2
+                    calories: 96
+                    sugar: 17.2
+        '404':
+          description: There was no fruit available with the given parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Not found
+
+  /api/fruit/all:
+    get:
+      tags:
+        - Fruits
+      summary: Request all Fruits
+      description: Get all Fruits available in the database in a list form.
+      operationId: getAllFruits
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+              example:
+                - genus: Fragaria
+                  name: Strawberry
+                  id: 3
+                  family: Rosaceae
+                  order: Rosales
+                  nutritions:
+                    carbohydrates: 5.5
+                    protein: 0
+                    fat: 0.4
+                    calories: 29
+                    sugar: 5.4
+                - genus: Musa
+                  name: Banana
+                  id: 2
+                  family: Musaceae
+                  order: Zingiberales
+                  nutritions:
+                    carbohydrates: 22
+                    protein: 0
+                    fat: 0.2
+                    calories: 96
+                    sugar: 17.2
+        '500':
+          description: There occured an error in the server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Internal server error
+
+  /api/fruit/family/{family}:
+    get:
+      tags:
+        - Taxonomy
+      summary: Request fruits with given family
+      description: Get all Fruits available in the database in a list form which belong to a given family.
+      operationId: getFruitsByFamily
+      parameters:
+        - name: family
+          in: path
+          required: true
+          description: The family name to filter by
+          schema:
+            type: string
+          example: Rosaceae
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+              example:
+                - genus: Fragaria
+                  name: Strawberry
+                  id: 3
+                  family: Rosaceae
+                  order: Rosales
+                  nutritions:
+                    carbohydrates: 5.5
+                    protein: 0
+                    fat: 0.4
+                    calories: 29
+                    sugar: 5.4
+        '404':
+          description: There was no fruit found with the given family
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Not found
+
+  /api/fruit/genus/{genus}:
+    get:
+      tags:
+        - Taxonomy
+      summary: Request fruits with given genus
+      description: Get all Fruits available in the database in a list form which belong to a given genus.
+      operationId: getFruitsByGenus
+      parameters:
+        - name: genus
+          in: path
+          required: true
+          description: The genus name to filter by
+          schema:
+            type: string
+          example: Fragaria
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+              example:
+                - genus: Fragaria
+                  name: Strawberry
+                  id: 3
+                  family: Rosaceae
+                  order: Rosales
+                  nutritions:
+                    carbohydrates: 5.5
+                    protein: 0
+                    fat: 0.4
+                    calories: 29
+                    sugar: 5.4
+        '404':
+          description: There was no fruit found with the given genus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Not found
+
+  /api/fruit/order/{order}:
+    get:
+      tags:
+        - Taxonomy
+      summary: Request fruits with given order
+      description: Get all Fruits available in the database in a list form which belong to a given order.
+      operationId: getFruitsByOrder
+      parameters:
+        - name: order
+          in: path
+          required: true
+          description: The order name to filter by
+          schema:
+            type: string
+          example: Rosales
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+              example:
+                - genus: Fragaria
+                  name: Strawberry
+                  id: 3
+                  family: Rosaceae
+                  order: Rosales
+                  nutritions:
+                    carbohydrates: 5.5
+                    protein: 0
+                    fat: 0.4
+                    calories: 29
+                    sugar: 5.4
+        '404':
+          description: There was no fruit found with the given order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Not found
+
+  /api/fruit:
+    put:
+      tags:
+        - Fruits
+      summary: Add a fruit to the database
+      description: Add a new fruit to the database
+      operationId: addFruit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FruitInput'
+            example:
+              genus: Fragaria
+              name: Strawberry
+              family: Rosaceae
+              order: Rosales
+              nutritions:
+                carbohydrates: 5.5
+                protein: 0
+                fat: 0.4
+                calories: 29
+                sugar: 5.4
+      responses:
+        '200':
+          description: Fruit successfully added
+        '417':
+          description: The fruit either already existed in the database, or the JSON format was not correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: The given JSON could not be processed
+
+components:
+  schemas:
+    Fruit:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the Fruit
+          example: Strawberry
+        id:
+          type: integer
+          description: ID of the Fruit
+          example: 3
+        family:
+          type: string
+          description: Family of the Fruit
+          example: Rosaceae
+        genus:
+          type: string
+          description: Genus of the Fruit
+          example: Fragaria
+        order:
+          type: string
+          description: Order of the Fruit
+          example: Rosales
+        nutritions:
+          $ref: '#/components/schemas/Nutritions'
+      required:
+        - name
+        - id
+        - family
+        - genus
+        - order
+        - nutritions
+
+    FruitInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the Fruit
+          example: Strawberry
+        family:
+          type: string
+          description: Family of the Fruit
+          example: Rosaceae
+        genus:
+          type: string
+          description: Genus of the Fruit
+          example: Fragaria
+        order:
+          type: string
+          description: Order of the Fruit
+          example: Rosales
+        nutritions:
+          $ref: '#/components/schemas/Nutritions'
+      required:
+        - name
+        - family
+        - genus
+        - order
+        - nutritions
+
+    Nutritions:
+      type: object
+      description: Nutritions of the Fruit
+      properties:
+        carbohydrates:
+          type: integer
+          description: Carbohydrates of the Fruit (per 100g) in grams
+          example: 22
+        protein:
+          type: integer
+          description: Protein of the Fruit (per 100g) in grams
+          example: 0
+        fat:
+          type: integer
+          description: Fat of the Fruit (per 100g) in grams
+          example: 0
+        calories:
+          type: integer
+          description: Calories of the Fruit (per 100g)
+          example: 96
+        sugar:
+          type: integer
+          description: Sugar of the Fruit (per 100g) in grams
+          example: 17
+      required:
+        - carbohydrates
+        - protein
+        - fat
+        - calories
+        - sugar
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Not found
