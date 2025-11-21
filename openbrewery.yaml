@@ -17,6 +17,10 @@ servers:
   - url: https://api.openbrewerydb.org/v1
     description: Production API Server
 
+externalDocs:
+  description: Open Brewery DB Official Documentation
+  url: https://www.openbrewerydb.org/documentation
+
 tags:
   - name: Breweries
     description: Operations related to brewery data
