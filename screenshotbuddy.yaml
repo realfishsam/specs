@@ -1,0 +1,587 @@
+openapi: 3.0.3
+info:
+  title: Screenshot Buddy API
+  description: |
+    Screenshot Buddy API allows you to create screenshots of web pages using render links or an async render queue.
+    
+    ## Authentication Methods
+    
+    The API supports multiple authentication methods:
+    - **API Key**: Bearer token in Authorization header (recommended for production)
+    - **Access Token**: Used in render link URLs
+    - **API Secret**: Optional signature-based security for render links
+    
+    ## Security Best Practices
+    
+    For production use, you should:
+    1. Enable the "Require API Secret" setting from your dashboard
+    2. Use HMAC-SHA256 signatures to prevent link manipulation
+    3. Never expose API secrets in public-facing applications
+  version: 1.0.0
+  contact:
+    name: Screenshot Buddy Support
+    url: https://screenshotbuddy.com
+  termsOfService: https://screenshotbuddy.com/terms
+servers:
+  - url: https://api.screenshotbuddy.com
+    description: Production API Server
+tags:
+  - name: Render Links
+    description: Direct screenshot rendering via GET or POST requests
+    externalDocs:
+      description: Render Links Documentation
+      url: https://screenshotbuddy.com/docs/render-links
+  - name: Render Queue
+    description: Asynchronous screenshot rendering with status tracking
+    externalDocs:
+      description: Render Queue Documentation
+      url: https://screenshotbuddy.com/docs/render-queue
+paths:
+  /render/{accessToken}:
+    get:
+      tags:
+        - Render Links
+      summary: Render screenshot via query string
+      description: |
+        Create a screenshot by adding screenshot options as query parameters. This method is suitable for internal applications.
+        
+        **Important**: For production use, enable API Secret requirement and include a signature parameter to prevent URL manipulation.
+        
+        The signature is created using HMAC-SHA256 hash function based on your API secret and screenshot options.
+      operationId: renderViaQueryString
+      parameters:
+        - name: accessToken
+          in: path
+          required: true
+          description: Your access token from the dashboard
+          schema:
+            type: string
+          example: YourAccessToken
+        - name: url
+          in: query
+          required: true
+          description: URL of the webpage to screenshot
+          schema:
+            type: string
+            format: uri
+          example: https://www.wikipedia.org
+        - name: format
+          in: query
+          description: Output format for the screenshot
+          schema:
+            type: string
+            enum:
+              - png
+              - jpg
+              - jpeg
+              - webp
+              - pdf
+            default: png
+          example: png
+        - name: signature
+          in: query
+          description: HMAC-SHA256 signature for secure render links (required when API Secret is enabled)
+          schema:
+            type: string
+          example: 80070713463e7749b90c2dc24911e275
+        - name: width
+          in: query
+          description: Viewport width in pixels
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4096
+        - name: height
+          in: query
+          description: Viewport height in pixels
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 8192
+        - name: fullPage
+          in: query
+          description: Capture full page screenshot
+          schema:
+            type: boolean
+            default: false
+        - name: delay
+          in: query
+          description: Delay before capturing screenshot in milliseconds
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 30000
+      responses:
+        '200':
+          description: Screenshot generated successfully
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid access token or signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-code-samples:
+        - lang: HTML
+          source: |
+            <!-- Direct image embed -->
+            <img src="https://api.screenshotbuddy.com/render/YourAccessToken?url=https://www.wikipedia.org&format=png&signature=80070713463e7749b90c2dc24911e275" alt="Screenshot">
+        - lang: curl
+          source: |
+            curl "https://api.screenshotbuddy.com/render/YourAccessToken?url=https://www.wikipedia.org&format=png&signature=80070713463e7749b90c2dc24911e275" \
+              --output screenshot.png
+  /render:
+    post:
+      tags:
+        - Render Links
+      summary: Render screenshot via POST request
+      description: |
+        Create a screenshot by sending screenshot options in the request body. This method requires an API key and is recommended for production use.
+        
+        The API immediately processes the render request and returns the screenshot file.
+      operationId: renderViaPost
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenderRequest'
+            examples:
+              basic:
+                summary: Basic PNG screenshot
+                value:
+                  url: https://www.wikipedia.org
+                  format: png
+              webp:
+                summary: WebP screenshot
+                value:
+                  url: https://www.wikipedia.org
+                  format: webp
+              fullPage:
+                summary: Full page screenshot with custom viewport
+                value:
+                  url: https://example.com
+                  format: png
+                  fullPage: true
+                  width: 1920
+                  height: 1080
+      responses:
+        '200':
+          description: Screenshot generated successfully
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-code-samples:
+        - lang: curl
+          source: |
+            curl --header "Content-Type: application/json" \
+              --header "Authorization: Bearer your-api-key" \
+              --request POST \
+              --data '{"url":"https://www.wikipedia.org","format":"webp"}' \
+              https://api.screenshotbuddy.com/render
+        - lang: JavaScript
+          source: |
+            const response = await fetch('https://api.screenshotbuddy.com/render', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer your-api-key'
+              },
+              body: JSON.stringify({
+                url: 'https://www.wikipedia.org',
+                format: 'webp'
+              })
+            });
+            const blob = await response.blob();
+        - lang: Python
+          source: |
+            import requests
+            
+            response = requests.post(
+                'https://api.screenshotbuddy.com/render',
+                headers={
+                    'Authorization': 'Bearer your-api-key',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'url': 'https://www.wikipedia.org',
+                    'format': 'webp'
+                }
+            )
+            
+            with open('screenshot.webp', 'wb') as f:
+                f.write(response.content)
+  /render/queue:
+    post:
+      tags:
+        - Render Queue
+      summary: Queue screenshot render request
+      description: |
+        Submit an asynchronous screenshot render request. The API creates a request ID, adds it to the render queue, and returns a status URL.
+        
+        ## Response Behavior
+        
+        - If `force` is not set and a recent screenshot exists, the API returns it immediately with `screenshotUrl` and `screenshotHtmlUrl`
+        - Otherwise, poll the `statusUrl` to check when the screenshot is ready
+        
+        ## Queue Processing
+        
+        - Free tier: Processed evenly with rate limiting to prevent abuse
+        - Paid plans: Dedicated infrastructure with higher priority
+      operationId: queueRender
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenderQueueRequest'
+            examples:
+              basic:
+                summary: Basic queue request
+                value:
+                  url: https://www.wikipedia.org
+                  format: webp
+              forced:
+                summary: Force new screenshot
+                value:
+                  url: https://www.wikipedia.org
+                  format: png
+                  force: true
+      responses:
+        '200':
+          description: Request queued successfully (or immediate response if cached screenshot available)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderQueueResponse'
+              examples:
+                queued:
+                  summary: Request queued
+                  value:
+                    statusUrl: https://api.screenshotbuddy.com/status/abc123
+                    status: queued
+                    requestId: abc123
+                cached:
+                  summary: Cached screenshot returned immediately
+                  value:
+                    statusUrl: https://api.screenshotbuddy.com/status/abc123
+                    status: completed
+                    requestId: abc123
+                    screenshotUrl: https://screenshots.screenshotbuddy.com/abc123.webp
+                    screenshotHtmlUrl: https://screenshots.screenshotbuddy.com/abc123.html
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-code-samples:
+        - lang: curl
+          source: |
+            curl --header "Content-Type: application/json" \
+              --header "Authorization: Bearer your-api-key" \
+              --request POST \
+              --data '{"url":"https://www.wikipedia.org","format":"webp"}' \
+              https://api.screenshotbuddy.com/render/queue
+        - lang: JavaScript
+          source: |
+            const response = await fetch('https://api.screenshotbuddy.com/render/queue', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer your-api-key'
+              },
+              body: JSON.stringify({
+                url: 'https://www.wikipedia.org',
+                format: 'webp'
+              })
+            });
+            
+            const data = await response.json();
+            console.log('Status URL:', data.statusUrl);
+            console.log('Request ID:', data.requestId);
+        - lang: Python
+          source: |
+            import requests
+            import time
+            
+            # Queue the request
+            response = requests.post(
+                'https://api.screenshotbuddy.com/render/queue',
+                headers={
+                    'Authorization': 'Bearer your-api-key',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'url': 'https://www.wikipedia.org',
+                    'format': 'webp'
+                }
+            )
+            
+            data = response.json()
+            
+            # Check if screenshot is ready
+            if 'screenshotUrl' in data:
+                print(f"Screenshot ready: {data['screenshotUrl']}")
+            else:
+                # Poll status until ready
+                while True:
+                    status_response = requests.get(data['statusUrl'])
+                    status_data = status_response.json()
+                    
+                    if status_data['status'] == 'completed':
+                        print(f"Screenshot ready: {status_data['screenshotUrl']}")
+                        break
+                    
+                    time.sleep(2)
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: API key for authentication. Get your API key from the dashboard.
+  schemas:
+    RenderRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL of the webpage to screenshot
+          example: https://www.wikipedia.org
+        format:
+          type: string
+          enum:
+            - png
+            - jpg
+            - jpeg
+            - webp
+            - pdf
+          default: png
+          description: Output format for the screenshot
+          example: webp
+        width:
+          type: integer
+          minimum: 1
+          maximum: 4096
+          description: Viewport width in pixels
+          example: 1920
+        height:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          description: Viewport height in pixels
+          example: 1080
+        fullPage:
+          type: boolean
+          default: false
+          description: Capture full page screenshot
+          example: false
+        delay:
+          type: integer
+          minimum: 0
+          maximum: 30000
+          description: Delay before capturing screenshot in milliseconds
+          example: 1000
+        quality:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Quality of the screenshot (for JPEG/WebP formats)
+          example: 90
+        deviceScaleFactor:
+          type: number
+          minimum: 1
+          maximum: 3
+          description: Device scale factor (pixel ratio)
+          example: 2
+    RenderQueueRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL of the webpage to screenshot
+          example: https://www.wikipedia.org
+        format:
+          type: string
+          enum:
+            - png
+            - jpg
+            - jpeg
+            - webp
+            - pdf
+          default: png
+          description: Output format for the screenshot
+          example: webp
+        force:
+          type: boolean
+          default: false
+          description: Force creation of a new screenshot instead of returning a cached version
+          example: false
+        width:
+          type: integer
+          minimum: 1
+          maximum: 4096
+          description: Viewport width in pixels
+          example: 1920
+        height:
+          type: integer
+          minimum: 1
+          maximum: 8192
+          description: Viewport height in pixels
+          example: 1080
+        fullPage:
+          type: boolean
+          default: false
+          description: Capture full page screenshot
+          example: false
+        delay:
+          type: integer
+          minimum: 0
+          maximum: 30000
+          description: Delay before capturing screenshot in milliseconds
+          example: 1000
+        quality:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Quality of the screenshot (for JPEG/WebP formats)
+          example: 90
+        deviceScaleFactor:
+          type: number
+          minimum: 1
+          maximum: 3
+          description: Device scale factor (pixel ratio)
+          example: 2
+    RenderQueueResponse:
+      type: object
+      required:
+        - statusUrl
+        - status
+        - requestId
+      properties:
+        statusUrl:
+          type: string
+          format: uri
+          description: URL to check the status of the render request
+          example: https://api.screenshotbuddy.com/status/abc123
+        status:
+          type: string
+          enum:
+            - queued
+            - processing
+            - completed
+            - failed
+          description: Current status of the render request
+          example: queued
+        requestId:
+          type: string
+          description: Unique identifier for the render request
+          example: abc123
+        screenshotUrl:
+          type: string
+          format: uri
+          description: URL of the generated screenshot (only present when status is completed or if cached screenshot is returned)
+          example: https://screenshots.screenshotbuddy.com/abc123.webp
+        screenshotHtmlUrl:
+          type: string
+          format: uri
+          description: URL of the HTML content of the screenshot (only present when status is completed or if cached screenshot is returned)
+          example: https://screenshots.screenshotbuddy.com/abc123.html
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid URL format
+        code:
+          type: string
+          description: Error code
+          example: INVALID_URL
+        message:
+          type: string
+          description: Detailed error message
+          example: The provided URL is not valid. Please provide a valid HTTP or HTTPS URL.
