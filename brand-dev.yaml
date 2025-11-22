@@ -9,8 +9,19 @@ info:
 externalDocs:
   description: Brand.dev Documentation
   url: https://docs.brand.dev/introduction
+tags:
+  - name: Retrieve Brand
+    description: Endpoints for retrieving brand data using various lookup methods
+  - name: Industry Classification
+    description: Endpoint to classify brands into NAICS codes
+  - name: Screenshot / Styleguide
+    description: Beta endpoints for capturing screenshots and extracting design systems
+  - name: AI Data Extraction
+    description: Beta endpoint for AI-powered data extraction from websites
+  - name: Utility
+    description: Utility endpoints for optimizing API performance
 servers:
-  - url: https://api.brand.dev
+  - url: https://api.brand.dev/v1
 security:
   - bearerAuth: []
 components:
