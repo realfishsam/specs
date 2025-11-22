@@ -1,0 +1,954 @@
+openapi: 3.1.0
+info:
+  title: Zaguán AI API
+  version: 0.27.0
+  description: |
+    # Zaguán AI - OpenAI-Compatible Gateway
+    
+    One OpenAI-Compatible API. Every Major LLM Provider.
+    
+    Zaguán is an OpenAI-compatible gateway with a smart translation layer built for solo devs, small teams, and agencies. 
+    Point your SDK at a single endpoint, swap any `provider/model` identifier, and ship in minutes — our translation layer 
+    handles the complexity of adapting your requests to each provider's native format.
+    
+    ## November 2025 Release Highlights
+    
+    - 🎭 **Realtime Voice API**: WebSocket-based voice conversations with ultra-low latency
+    - 🔊 **Audio Output**: Generate spoken audio directly from chat completions
+    - 🔗 **xAI Stateful Conversations**: 30-day server-side storage with encrypted thinking
+    - 💡 **Prompt Caching**: 90% cost savings with Anthropic Claude caching
+    - 🧑‍💻 **Gemini Thinking**: See the model's reasoning process in real-time
+    - 🎯 **Extra Body Translation**: Access any provider-specific feature seamlessly
+    - 🌐 **Virtual Models**: Multi-provider routing with automatic failover and load balancing
+    
+    ## What You Get
+    
+    - **OpenAI-compatible API**: Use familiar OpenAI endpoints and request schemas
+    - **Smart translation layer**: Automatically adapt prompts, parameters, and formats to each provider's API
+    - **Managed infrastructure**: Hosted routing layer with observability, authentication, and traffic controls built-in
+    
+    ## Supported Providers
+    
+    - **Alibaba** (101 models) - Qwen large language, multimodal, and generative media models
+    - **Anthropic** (9 models) - Claude family for high-integrity reasoning
+    - **Cohere** (27 models) - Command and embedding models for enterprise search
+    - **Deepseek** (2 models) - High-performance chat and reasoning
+    - **Fireworks** (41 models) - Fastest platform for open source AI models
+    - **Google** (50 models) - Gemini and Imagen families for multimodal reasoning
+    - **Groq** (20 models) - Ultra-low latency serving on Groq hardware
+    - **Inception** (2 models) - Specialized Mercury family for analytics
+    - **Mistral** (62 models) - French-built open and hosted models
+    - **Moonshot** (13 models) - Moonshot AI (Kimi) for Chinese-first reasoning
+    - **Novita** (71 models) - Wide catalog of partner models
+    - **OpenAI** (104 models) - Flagship GPT, image, audio, and embedding models
+    - **OpenRouter** (340 models) - Open source API gateway to various LLMs
+    - **Perplexity** (6 models) - Search-augmented Sonar family
+    - **Synthetic** (21 models) - OpenAI and Anthropic-compatible API
+    - **Together** (16 models) - Research-driven AI company
+    - **xAI** (8 models) - Grok series for lightning-fast inference
+    - **ZaguánAI** (52 models) - Smart Virtual models with multi-provider routing
+    
+    ## Pricing
+    
+    - **Founder's Plan**: €15/month (locked in forever for early adopters)
+    - **Standard Pricing**: €39/month
+    - No enterprise contracts required to start
+  contact:
+    name: Zaguán AI Support
+    url: https://zaguanai.com
+  license:
+    name: Proprietary
+    url: https://zaguanai.com/terms
+
+servers:
+  - url: https://api.zaguanai.com/v1
+    description: Primary API endpoint (proxied through Cloudflare)
+  - url: https://api-eu-fi-01.zaguanai.com/v1
+    description: Alternative direct-connection endpoint (bypasses Cloudflare)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Chat
+    description: Chat completion endpoints compatible with OpenAI format
+  - name: Models
+    description: Model discovery and management
+  - name: Virtual Models
+    description: Multi-provider routing with automatic failover
+
+paths:
+  /chat/completions:
+    post:
+      tags:
+        - Chat
+      summary: Create chat completion
+      description: |
+        Creates a chat completion using OpenAI-compatible format. Supports all standard OpenAI parameters 
+        plus provider-specific features via the `extra_body` parameter.
+        
+        ## Model Selection
+        
+        Use namespaced model identifiers in the format `provider/model-name`:
+        - `openai/gpt-4o-mini`
+        - `anthropic/claude-3-5-sonnet-20241022`
+        - `google/gemini-2.5-pro`
+        - `xai/grok-beta`
+        - `zaguanai/deepseek-r1-0528` (Virtual Model)
+        
+        ## Provider-Specific Features
+        
+        Access advanced features through the `extra_body` parameter:
+        
+        ### Anthropic Claude
+        - **Prompt Caching**: 90% cost savings with `system_cache_control`
+        - **Extended Thinking**: Up to 8K tokens with `extended_thinking`
+        - **PDF Support**: Native document analysis
+        
+        ### Google Gemini
+        - **Reasoning Control**: Adjust depth with `reasoning_effort`
+        - **Thinking Budgets**: Allocate tokens with `thinking_budget`
+        - **Thought Visibility**: See reasoning with `include_thoughts`
+        - **Safety Settings**: Configure filtering per category
+        
+        ### xAI Grok
+        - **Stateful Conversations**: 30-day storage with `store: true`
+        - **Encrypted Thinking**: Access reasoning process
+        - **Response References**: Use `response_id` for context
+      operationId: createChatCompletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+            examples:
+              basic:
+                summary: Basic chat completion
+                value:
+                  model: "openai/gpt-4o-mini"
+                  messages:
+                    - role: "user"
+                      content: "Say hello from Zaguán"
+              anthropic_caching:
+                summary: Anthropic prompt caching (90% cost savings)
+                value:
+                  model: "anthropic/claude-3-5-sonnet-20241022"
+                  messages:
+                    - role: "user"
+                      content: "Long document content here..."
+                    - role: "user"
+                      content: "Summarize this document"
+                  extra_body:
+                    system_cache_control:
+                      type: "ephemeral"
+              anthropic_extended_thinking:
+                summary: Claude extended thinking
+                value:
+                  model: "anthropic/claude-3-5-sonnet-20241022"
+                  messages:
+                    - role: "user"
+                      content: "Solve this complex problem step by step"
+                  max_tokens: 8000
+                  extra_body:
+                    extended_thinking: true
+              gemini_thinking:
+                summary: Google Gemini thinking
+                value:
+                  model: "google/gemini-2.5-pro"
+                  messages:
+                    - role: "user"
+                      content: "Explain quantum computing"
+                  extra_body:
+                    thinking_budget: 2048
+                    include_thoughts: true
+              gemini_reasoning:
+                summary: Gemini high reasoning
+                value:
+                  model: "google/gemini-2.5-pro"
+                  messages:
+                    - role: "user"
+                      content: "Analyze this complex scenario"
+                  extra_body:
+                    reasoning_effort: "high"
+              xai_stateful:
+                summary: xAI stateful conversation
+                value:
+                  model: "xai/grok-beta"
+                  messages:
+                    - role: "user"
+                      content: "What's the capital of France?"
+                  extra_body:
+                    use_responses_api: true
+                    store: true
+              virtual_model:
+                summary: Using a Virtual Model
+                value:
+                  model: "zaguanai/deepseek-r1-0528"
+                  messages:
+                    - role: "user"
+                      content: "Hello! How are you?"
+              streaming:
+                summary: Streaming response
+                value:
+                  model: "openai/gpt-4o-mini"
+                  messages:
+                    - role: "user"
+                      content: "Tell me a story"
+                  stream: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+              examples:
+                basic_response:
+                  summary: Basic completion response
+                  value:
+                    id: "chatcmpl-123"
+                    object: "chat.completion"
+                    created: 1677652288
+                    model: "openai/gpt-4o-mini"
+                    choices:
+                      - index: 0
+                        message:
+                          role: "assistant"
+                          content: "Hello from Zaguán! How can I help you today?"
+                        finish_reason: "stop"
+                    usage:
+                      prompt_tokens: 10
+                      completion_tokens: 12
+                      total_tokens: 22
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/StreamingResponse'
+        '401':
+          description: Unauthorized - Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  message: "Invalid API key"
+                  type: "invalid_request_error"
+                  code: "invalid_api_key"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  message: "Rate limit exceeded"
+                  type: "rate_limit_error"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+  /models:
+    get:
+      tags:
+        - Models
+      summary: List available models
+      description: |
+        Returns a list of all models available to your API key. Models are namespaced by provider 
+        (e.g., `openai/gpt-4o`, `anthropic/claude-sonnet-4-5`).
+        
+        Use this endpoint to:
+        - Discover available models
+        - Filter by provider prefix
+        - Check model capabilities and metadata
+      operationId: listModels
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    example: "list"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Model'
+              examples:
+                models_list:
+                  summary: Sample model list
+                  value:
+                    object: "list"
+                    data:
+                      - id: "openai/gpt-4o-mini"
+                        object: "model"
+                        created: 1677649963
+                        owned_by: "openai"
+                        provider: "openai"
+                      - id: "anthropic/claude-3-5-sonnet-20241022"
+                        object: "model"
+                        created: 1677610602
+                        owned_by: "anthropic"
+                        provider: "anthropic"
+                      - id: "google/gemini-2.5-pro"
+                        object: "model"
+                        created: 1677649963
+                        owned_by: "google"
+                        provider: "google"
+                      - id: "zaguanai/deepseek-r1-0528"
+                        object: "model"
+                        created: 1677649963
+                        owned_by: "zaguanai"
+                        provider: "zaguanai"
+                        virtual: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        Use your Zaguán API key as a Bearer token in the Authorization header:
+        ```
+        Authorization: Bearer YOUR_ZAGUAN_API_KEY
+        ```
+        
+        Store your API key in environment variable `ZAGUAN_API_KEY` for security.
+
+  schemas:
+    ChatCompletionRequest:
+      type: object
+      required:
+        - model
+        - messages
+      properties:
+        model:
+          type: string
+          description: |
+            Namespaced model identifier in format `provider/model-name`.
+            
+            **Standard Models**:
+            - `openai/gpt-4o-mini`, `openai/gpt-4o`
+            - `anthropic/claude-3-5-sonnet-20241022`, `anthropic/claude-3-5-haiku-20241022`
+            - `google/gemini-2.5-pro`, `google/gemini-2.0-flash-exp`
+            - `xai/grok-beta`
+            
+            **Virtual Models** (multi-provider routing):
+            - `zaguanai/deepseek-r1-0528`
+            - `zaguanai/claude-sonnet-4.5-latest`
+            - `zaguanai/gpt-oss-120b`
+            
+            Call `/models` endpoint to see full list.
+          example: "openai/gpt-4o-mini"
+        messages:
+          type: array
+          description: List of messages in the conversation
+          items:
+            $ref: '#/components/schemas/Message'
+          minItems: 1
+        temperature:
+          type: number
+          description: Sampling temperature between 0 and 2. Higher values make output more random.
+          minimum: 0
+          maximum: 2
+          default: 1
+          example: 0.7
+        top_p:
+          type: number
+          description: Nucleus sampling parameter. Alternative to temperature.
+          minimum: 0
+          maximum: 1
+          default: 1
+          example: 0.9
+        n:
+          type: integer
+          description: Number of completions to generate
+          minimum: 1
+          default: 1
+          example: 1
+        stream:
+          type: boolean
+          description: Whether to stream responses using Server-Sent Events
+          default: false
+          example: false
+        stop:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Up to 4 sequences where generation will stop
+          example: ["\n", "END"]
+        max_tokens:
+          type: integer
+          description: Maximum number of tokens to generate
+          minimum: 1
+          example: 1000
+        presence_penalty:
+          type: number
+          description: Penalty for token presence (-2.0 to 2.0)
+          minimum: -2.0
+          maximum: 2.0
+          default: 0
+        frequency_penalty:
+          type: number
+          description: Penalty for token frequency (-2.0 to 2.0)
+          minimum: -2.0
+          maximum: 2.0
+          default: 0
+        logit_bias:
+          type: object
+          description: Modify likelihood of specified tokens
+          additionalProperties:
+            type: number
+        user:
+          type: string
+          description: Unique identifier for end-user (for abuse monitoring)
+          example: "user-123"
+        extra_body:
+          $ref: '#/components/schemas/ExtraBodyOptions'
+      example:
+        model: "openai/gpt-4o-mini"
+        messages:
+          - role: "user"
+            content: "Say hello from Zaguán"
+
+    Message:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+          description: Role of the message sender
+          example: "user"
+        content:
+          type: string
+          description: Content of the message
+          example: "Hello, how are you?"
+        name:
+          type: string
+          description: Optional name of the participant
+
+    ExtraBodyOptions:
+      type: object
+      description: |
+        Provider-specific parameters that extend OpenAI compatibility.
+        
+        **Anthropic Claude**:
+        - `system_cache_control`: Enable prompt caching (90% cost savings)
+        - `extended_thinking`: Enable extended thinking mode (up to 8K tokens)
+        
+        **Google Gemini**:
+        - `reasoning_effort`: Control reasoning depth ("low", "medium", "high")
+        - `thinking_budget`: Token budget for internal reasoning (number)
+        - `include_thoughts`: Include reasoning in response (boolean)
+        - `safety_settings`: Configure content filtering (array)
+        
+        **xAI Grok**:
+        - `use_responses_api`: Enable Responses API for stateful conversations
+        - `store`: Store conversation server-side (30-day retention)
+        - `response_id`: Reference to previous response for context
+      properties:
+        # Anthropic-specific
+        system_cache_control:
+          type: object
+          description: Enable Anthropic prompt caching for 90% cost savings
+          properties:
+            type:
+              type: string
+              enum: [ephemeral]
+              example: "ephemeral"
+        extended_thinking:
+          type: boolean
+          description: Enable Claude extended thinking mode (up to 8K tokens)
+          example: true
+        
+        # Google Gemini-specific
+        reasoning_effort:
+          type: string
+          enum: [low, medium, high]
+          description: Control Gemini reasoning depth
+          example: "high"
+        thinking_budget:
+          type: integer
+          description: Token budget for Gemini internal reasoning
+          minimum: 0
+          example: 2048
+        include_thoughts:
+          type: boolean
+          description: Include Gemini's reasoning process in response
+          example: true
+        safety_settings:
+          type: array
+          description: Configure Gemini content filtering
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+                enum: 
+                  - HARM_CATEGORY_HARASSMENT
+                  - HARM_CATEGORY_HATE_SPEECH
+                  - HARM_CATEGORY_SEXUALLY_EXPLICIT
+                  - HARM_CATEGORY_DANGEROUS_CONTENT
+              threshold:
+                type: string
+                enum:
+                  - BLOCK_NONE
+                  - BLOCK_ONLY_HIGH
+                  - BLOCK_MEDIUM_AND_ABOVE
+                  - BLOCK_LOW_AND_ABOVE
+        
+        # xAI-specific
+        use_responses_api:
+          type: boolean
+          description: Enable xAI Responses API for stateful conversations
+          example: true
+        store:
+          type: boolean
+          description: Store conversation server-side (30-day retention)
+          example: true
+        response_id:
+          type: string
+          description: Reference to previous response for context continuation
+          example: "resp_abc123"
+      example:
+        reasoning_effort: "high"
+        thinking_budget: 2048
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the completion
+          example: "chatcmpl-123"
+        object:
+          type: string
+          enum: [chat.completion]
+          example: "chat.completion"
+        created:
+          type: integer
+          description: Unix timestamp of creation
+          example: 1677652288
+        model:
+          type: string
+          description: Model used for completion
+          example: "openai/gpt-4o-mini"
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        usage:
+          $ref: '#/components/schemas/Usage'
+        metadata:
+          type: object
+          description: Provider-specific metadata (e.g., Gemini thoughts)
+          additionalProperties: true
+
+    Choice:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: Index of the choice
+          example: 0
+        message:
+          $ref: '#/components/schemas/Message'
+        finish_reason:
+          type: string
+          enum: [stop, length, content_filter, tool_calls]
+          description: Reason why generation stopped
+          example: "stop"
+
+    Usage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+          description: Number of tokens in the prompt
+          example: 10
+        completion_tokens:
+          type: integer
+          description: Number of tokens in the completion
+          example: 12
+        total_tokens:
+          type: integer
+          description: Total tokens used
+          example: 22
+
+    StreamingResponse:
+      type: object
+      description: |
+        Server-Sent Events format for streaming responses.
+        Each line is `data: {JSON}` followed by a blank line.
+        Stream ends with `data: [DONE]`.
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [chat.completion.chunk]
+        created:
+          type: integer
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              delta:
+                type: object
+                properties:
+                  role:
+                    type: string
+                  content:
+                    type: string
+              finish_reason:
+                type: string
+                nullable: true
+
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Namespaced model identifier
+          example: "openai/gpt-4o-mini"
+        object:
+          type: string
+          enum: [model]
+          example: "model"
+        created:
+          type: integer
+          description: Unix timestamp
+          example: 1677649963
+        owned_by:
+          type: string
+          description: Organization that owns the model
+          example: "openai"
+        provider:
+          type: string
+          description: Provider namespace
+          example: "openai"
+        virtual:
+          type: boolean
+          description: Whether this is a Virtual Model with multi-provider routing
+          example: false
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Invalid API key"
+            type:
+              type: string
+              description: Error type
+              example: "invalid_request_error"
+            code:
+              type: string
+              description: Error code
+              example: "invalid_api_key"
+
+externalDocs:
+  description: Zaguán AI Documentation
+  url: https://zaguanai.com/docs
+
+x-virtual-models:
+  description: |
+    Virtual Models provide multi-provider routing with automatic failover and load balancing.
+    Instead of calling a single provider directly, Virtual Models intelligently route to multiple
+    underlying providers based on health checks and routing strategies.
+  
+  models:
+    - id: zaguanai/claude-haiku-4.5-latest
+      name: Claude Haiku 4.5 Latest
+      description: Fast and efficient Claude model for quick responses and cost-effective operations
+      strategy: Health-Aware Round Robin
+      providers: [anthropic, novita]
+    
+    - id: zaguanai/claude-sonnet-4.5-latest
+      name: Claude Sonnet 4.5 Latest
+      description: Balanced Claude model offering strong performance for general-purpose tasks
+      strategy: Health-Aware Round Robin
+      providers: [anthropic, novita]
+    
+    - id: zaguanai/deepseek-r1-0528
+      name: DeepSeek R1 0528
+      description: Advanced DeepSeek reasoning model with enhanced capabilities
+      strategy: Health-Aware Round Robin
+      providers: [deepseek, novita]
+    
+    - id: zaguanai/deepseek-v3
+      name: DeepSeek v3
+      description: Latest DeepSeek v3 model with improved performance and accuracy
+      strategy: Health-Aware Round Robin
+      providers: [deepseek, novita, openrouter]
+    
+    - id: zaguanai/deepseek-v3.1-terminus
+      name: DeepSeek v3.1 Terminus
+      description: Specialized DeepSeek v3.1 variant optimized for complex reasoning tasks
+      strategy: Health-Aware Round Robin
+      providers: [deepseek, novita]
+    
+    - id: zaguanai/glm-4.5
+      name: GLM 4.5
+      description: Advanced GLM model with strong reasoning and language understanding capabilities
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/glm-4.6
+      name: GLM 4.6
+      description: Latest GLM model with enhanced capabilities
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/gemini-flash-latest
+      name: Google Gemini Flash Latest
+      description: Fast and efficient Gemini model optimized for quick responses
+      strategy: Health-Aware Round Robin
+      providers: [google]
+    
+    - id: zaguanai/gemini-flash-lite-latest
+      name: Google Gemini Flash Lite Latest
+      description: Lightweight Gemini Flash variant for efficient processing
+      strategy: Health-Aware Round Robin
+      providers: [google]
+    
+    - id: zaguanai/gemini-pro-latest
+      name: Google Gemini Pro Latest
+      description: Professional-grade Gemini model with advanced capabilities
+      strategy: Health-Aware Round Robin
+      providers: [google]
+    
+    - id: zaguanai/gpt-oss-120b
+      name: GPT OSS 120B
+      description: Cost-effective 120B parameter model for general-purpose tasks
+      strategy: Health-Aware Round Robin
+      providers: [openai, novita, deepseek]
+    
+    - id: zaguanai/gpt-oss-20b
+      name: GPT OSS 20B
+      description: Lightweight 20B parameter model for simple tasks
+      strategy: Health-Aware Round Robin
+      providers: [openai, novita]
+    
+    - id: zaguanai/grok-4-latest
+      name: Grok 4 Latest
+      description: Latest Grok model with advanced reasoning and real-time capabilities
+      strategy: Health-Aware Round Robin
+      providers: [xai]
+    
+    - id: zaguanai/kimi-k2-instruct-0905
+      name: Kimi K2 Instruct 0905
+      description: Instruction-tuned Kimi model with balanced performance
+      strategy: Health-Aware Round Robin
+      providers: [moonshot]
+    
+    - id: zaguanai/kimi-k2-thinking
+      name: Kimi K2 Thinking
+      description: Reasoning-focused Kimi model with extended thinking capabilities
+      strategy: Health-Aware Round Robin
+      providers: [moonshot]
+    
+    - id: zaguanai/llama-4-maverick-17b-128e-instruct
+      name: Llama 4 Maverick 17B-128E Instruct
+      description: Experimental Llama 4 variant with enhanced capabilities
+      strategy: Health-Aware Round Robin
+      providers: [novita, together]
+    
+    - id: zaguanai/llama-4-scout-17b-16e-instruct
+      name: Llama 4 Scout 17B-16E Instruct
+      description: Compact Llama 4 Scout model optimized for efficiency
+      strategy: Health-Aware Round Robin
+      providers: [novita, together]
+    
+    - id: zaguanai/minimax-m2
+      name: MiniMax M2
+      description: MiniMax M2 model with advanced capabilities
+      strategy: Health-Aware Round Robin
+      providers: [novita]
+    
+    - id: zaguanai/gpt-5-chat-latest
+      name: GPT-5 Chat Latest
+      description: Latest GPT-5 model with state-of-the-art performance
+      strategy: Health-Aware Round Robin
+      providers: [openai]
+    
+    - id: zaguanai/gpt-5-mini-latest
+      name: GPT-5 Mini Latest
+      description: Compact GPT-5 variant for efficient processing
+      strategy: Health-Aware Round Robin
+      providers: [openai]
+    
+    - id: zaguanai/gpt-5-nano-latest
+      name: GPT-5 Nano Latest
+      description: Ultra-lightweight GPT-5 model for cost-effective operations
+      strategy: Health-Aware Round Robin
+      providers: [openai]
+    
+    - id: zaguanai/qwen3-235b-a22b-instruct
+      name: Qwen3 235B A22B Instruct
+      description: Large-scale Qwen3 model with 235B parameters
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-235b-a22b-thinking
+      name: Qwen3 235B A22B Thinking
+      description: Reasoning-enhanced Qwen3 model with thinking capabilities
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-30b-a3b
+      name: Qwen3 30B A3B
+      description: Mid-size Qwen3 model with 30B parameters
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-coder-30b-a3b-instruct
+      name: Qwen3 Coder 30B A3B Instruct
+      description: Specialized coding model with 30B parameters
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-coder-480b-a35b-instruct
+      name: Qwen3 Coder 480B A35B Instruct
+      description: Large-scale coding model with 480B parameters
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-max
+      name: Qwen3 Max
+      description: Flagship Qwen3 model with maximum capabilities
+      strategy: Health-Aware Round Robin
+      providers: [alibaba]
+    
+    - id: zaguanai/qwen3-next-80b-a3b-instruct
+      name: Qwen3 Next 80B A3B Instruct
+      description: Next-generation Qwen model with 80B parameters
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+    
+    - id: zaguanai/qwen3-next-80b-a3b-thinking
+      name: Qwen3 Next 80B A3B Thinking
+      description: Reasoning-enhanced Qwen model with thinking capabilities
+      strategy: Health-Aware Round Robin
+      providers: [alibaba, novita]
+
+x-code-examples:
+  curl:
+    language: bash
+    code: |
+      curl https://api.zaguanai.com/v1/chat/completions \
+        -H "Authorization: Bearer $ZAGUAN_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "model": "openai/gpt-4o-mini",
+          "messages": [
+            {"role": "user", "content": "Say hello from Zaguán"}
+          ]
+        }'
+  
+  python:
+    language: python
+    code: |
+      import os
+      from openai import OpenAI
+
+      client = OpenAI(
+          api_key=os.environ["ZAGUAN_API_KEY"],
+          base_url="https://api.zaguanai.com/v1",
+      )
+
+      response = client.chat.completions.create(
+          model="openai/gpt-4o-mini",
+          messages=[{"role": "user", "content": "Say hello from Zaguán"}],
+      )
+
+      print(response.choices[0].message.content)
+  
+  typescript:
+    language: typescript
+    code: |
+      import OpenAI from "openai";
+
+      const client = new OpenAI({
+        apiKey: process.env.ZAGUAN_API_KEY,
+        baseURL: "https://api.zaguanai.com/v1",
+      });
+
+      const response = await client.chat.completions.create({
+        model: "openai/gpt-4o-mini",
+        messages: [{ role: "user", content: "Say hello from Zaguán" }],
+      });
+
+      console.log(response.choices[0].message);
+  
+  go:
+    language: go
+    code: |
+      package main
+
+      import (
+          "context"
+          "fmt"
+          "log"
+          "os"
+
+          openai "github.com/openai/openai-go"
+      )
+
+      func main() {
+          client := openai.NewClient(os.Getenv("ZAGUAN_API_KEY"))
+          client.BaseURL = "https://api.zaguanai.com/v1"
+
+          resp, err := client.Chat.Completions.New(
+              context.Background(),
+              openai.ChatCompletionNewParams{
+                  Model:    openai.F("openai/gpt-4o-mini"),
+                  Messages: openai.F([]openai.ChatCompletionMessageParam{
+                      openai.ChatCompletionUserMessageParam{
+                          Content: openai.F([]openai.ChatCompletionMessageContent{
+                              openai.ChatCompletionMessageContentTextParam{
+                                  Text: openai.F("Say hello from Zaguán"),
+                              },
+                          }),
+                      },
+                  }),
+              },
+          )
+          if err != nil {
+              log.Fatal(err)
+          }
+
+          fmt.Println(resp.Choices[0].Message.Content[0].Text)
+      }
