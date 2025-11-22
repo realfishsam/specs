@@ -1,0 +1,698 @@
+openapi: 3.0.3
+info:
+  title: Parse API
+  version: 1.0.0
+  description: |
+    The Parse APIs are organized around REST and return JSON-encoded responses (including errors), and use standard HTTP response codes.
+    
+    They are designed to allow you integrate quickly and easily into your application.
+    
+    Each API operates independently and is organized to have predictable, straightforward URLs.
+  contact:
+    name: Parse API
+    url: https://parseapi.com
+
+servers:
+  - url: https://useragent.parseapi.com
+    description: Useragent API Server (HTTPS)
+  - url: http://useragent.parseapi.com
+    description: Useragent API Server (HTTP)
+  - url: https://postalcode.parseapi.com
+    description: Postal Code API Server (HTTPS)
+  - url: http://postalcode.parseapi.com
+    description: Postal Code API Server (HTTP)
+
+tags:
+  - name: Useragent
+    description: Identifies the device, operating system and browser information from a useragent string
+  - name: Postal Code
+    description: Provides location details from a zip code including city, state, county, latitude, and longitude
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/{apikey}/{useragent}:
+    get:
+      tags:
+        - Useragent
+      summary: Parse User Agent String
+      description: Identifies the device, operating system and browser information from a useragent string.
+      operationId: parseUseragent
+      parameters:
+        - name: apikey
+          in: path
+          required: true
+          description: Your API key for authentication
+          schema:
+            type: string
+          example: APIKEY
+        - name: useragent
+          in: path
+          required: true
+          description: URL-encoded useragent string to parse
+          schema:
+            type: string
+          example: Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F142.0.0.0+Safari%2F537.36
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UseragentResponse'
+              examples:
+                chrome-macos:
+                  summary: Chrome on macOS
+                  value:
+                    type: browser
+                    tag: null
+                    name: Chrome
+                    version: 142.0.0.0
+                    url: https://www.google.com/chrome/
+                    description: Chrome is a cross-platform web browser developed by Google.
+                    is_app: false
+                    is_bot: false
+                    is_browser: true
+                    is_unknown: false
+                    device:
+                      type: desktop
+                      name: null
+                      version: null
+                      description: null
+                      img: null
+                      is_auto: false
+                      is_console: false
+                      is_desktop: true
+                      is_mobile: false
+                      is_tablet: false
+                      is_tv: false
+                      is_wearable: false
+                      is_unknown: false
+                    os:
+                      type: desktop
+                      name: MacOS
+                      version: 10.15.7
+                      description: macOS is an operating system developed and marketed by Apple
+                      img: https://cdn.parseapi.com/img/os/macos.png
+                      url: null
+                      vendor:
+                        name: Apple
+                        url: http://apple.com
+                      active: true
+                    browser:
+                      type: desktop
+                      name: Chrome
+                      version: 142.0.0.0
+                      description: Chrome is a cross-platform web browser developed by Google.
+                      img: https://cdn.parseapi.com/img/browser/chrome.png
+                      engine:
+                        name: WebKit
+                        version: 537.36
+                        active: true
+                        url: https://webkit.org
+                        description: WebKit is a fork of KHTML by Apple used in Safari.
+                        vendor:
+                          name: Apple
+                          url: http://apple.com
+                      vendor:
+                        name: Google
+                        url: http://google.com
+                      active: true
+                      url: https://www.google.com/chrome/
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/{apikey}/{postalcode}:
+    get:
+      tags:
+        - Postal Code
+      summary: Lookup Location by Postal Code
+      description: Provides location details from a zip code including city, state, county, latitude, and longitude.
+      operationId: lookupPostalCode
+      parameters:
+        - name: apikey
+          in: path
+          required: true
+          description: Your API key for authentication
+          schema:
+            type: string
+          example: APIKEY
+        - name: postalcode
+          in: path
+          required: true
+          description: Postal code to lookup
+          schema:
+            type: string
+          example: '28043'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostalCodeResponse'
+              examples:
+                nc-28043:
+                  summary: Forest City, North Carolina
+                  value:
+                    continent:
+                      name: North America
+                      alpha2: NA
+                    country:
+                      name: United States
+                      alpha2: US
+                      alpha3: USA
+                      numeric: 840
+                      tld: .us
+                    state:
+                      name: North Carolina
+                      alpha2: NC
+                    county:
+                      name: Rutherford
+                    city:
+                      name: Forest City
+                    code:
+                      name: '28043'
+                      latitude: '35.32500000'
+                      longitude: '-81.84600000'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/{apikey}/distance/{postalcode}/{postalcode2}:
+    get:
+      tags:
+        - Postal Code
+      summary: Calculate Distance Between Two Postal Codes
+      description: Calculate the distance between two zip codes.
+      operationId: calculateDistance
+      parameters:
+        - name: apikey
+          in: path
+          required: true
+          description: Your API key for authentication
+          schema:
+            type: string
+          example: APIKEY
+        - name: postalcode
+          in: path
+          required: true
+          description: First postal code
+          schema:
+            type: string
+          example: '28043'
+        - name: postalcode2
+          in: path
+          required: true
+          description: Second postal code
+          schema:
+            type: string
+          example: '90210'
+      responses:
+        '200':
+          description: Successful response with distance information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistanceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/{apikey}/radius/{postalcode}/{radius}:
+    get:
+      tags:
+        - Postal Code
+      summary: Find Postal Codes Within Radius
+      description: Find all zip codes within a specified radius. Distance is in miles by default, can be specified as kilometers.
+      operationId: findPostalCodesInRadius
+      parameters:
+        - name: apikey
+          in: path
+          required: true
+          description: Your API key for authentication
+          schema:
+            type: string
+          example: APIKEY
+        - name: postalcode
+          in: path
+          required: true
+          description: Center postal code
+          schema:
+            type: string
+          example: '28043'
+        - name: radius
+          in: path
+          required: true
+          description: Distance in miles or kilometers (default is miles)
+          schema:
+            type: number
+          example: 25
+      responses:
+        '200':
+          description: Successful response with list of postal codes within radius
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadiusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: path
+      name: apikey
+      description: API key for authentication. You can view and manage your API keys in the Parse Dashboard. All API requests must be made over HTTPS.
+
+  schemas:
+    UseragentResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          description: String representing useragent's type
+          enum:
+            - app
+            - bot
+            - browser
+            - unknown
+        tag:
+          type: string
+          nullable: true
+          description: 'app: email, feed, web, unknown; bot: monitor, scanner, scraper, spider, unknown'
+        name:
+          type: string
+          description: The useragent's name
+        version:
+          type: string
+          description: The useragent's version
+        description:
+          type: string
+          description: Short descriptive string. Often useful for displaying to users.
+        url:
+          type: string
+          description: URL to webpage describing bot, browser homepage, etc
+        is_app:
+          type: boolean
+          description: Is the useragent an app?
+        is_bot:
+          type: boolean
+          description: Is the useragent a bot?
+        is_browser:
+          type: boolean
+          description: Is the useragent a browser?
+        is_unknown:
+          type: boolean
+          description: Is the useragent unknown?
+        device:
+          $ref: '#/components/schemas/Device'
+        os:
+          $ref: '#/components/schemas/OperatingSystem'
+        browser:
+          $ref: '#/components/schemas/Browser'
+
+    Device:
+      type: object
+      properties:
+        type:
+          type: string
+          description: String representing device's type
+          enum:
+            - auto
+            - console
+            - desktop
+            - mobile
+            - tablet
+            - tv
+            - wearable
+            - unknown
+        name:
+          type: string
+          nullable: true
+          description: "The device's name. iPhone, Kindle, Unknown, etc."
+        version:
+          type: string
+          nullable: true
+          description: "The device's version including major, minor and patch. Example: 10.13.2"
+        description:
+          type: string
+          nullable: true
+          description: Short descriptive string. Often useful for displaying to users.
+        url:
+          type: string
+          nullable: true
+          description: URL to webpage of device
+        img:
+          type: string
+          nullable: true
+          description: "URL to device's 48px x 48px png icon"
+        is_auto:
+          type: boolean
+          description: Is the device an automobile?
+        is_console:
+          type: boolean
+          description: Is the device a gaming console?
+        is_desktop:
+          type: boolean
+          description: Is the device a desktop computer?
+        is_mobile:
+          type: boolean
+          description: Is the device a mobile or portable device?
+        is_tablet:
+          type: boolean
+          description: Is the device a tablet?
+        is_tv:
+          type: boolean
+          description: Is the device a television?
+        is_wearable:
+          type: boolean
+          description: Is the device a wearable device?
+        is_unknown:
+          type: boolean
+          description: Is the device unknown?
+        vendor:
+          $ref: '#/components/schemas/Vendor'
+
+    OperatingSystem:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Operating system type
+        name:
+          type: string
+          description: 'Operating system name. Example: macOS, Windows, etc.'
+        version:
+          type: string
+          description: 'Operating system version. Example: 10.7.5 for MacOS, 10 for Windows, 6.0 for Android.'
+        description:
+          type: string
+          description: Short descriptive string. Often useful for displaying to users.
+        url:
+          type: string
+          nullable: true
+          description: URL to operating system's webpage
+        img:
+          type: string
+          description: "URL to operating system's 48px x 48px png icon"
+        active:
+          type: boolean
+          description: Is operating system active and maintained?
+        vendor:
+          $ref: '#/components/schemas/Vendor'
+
+    Browser:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Browser type
+        name:
+          type: string
+          description: 'Browser name. Example values returned: Safari, Chrome, Firefox, Opera, etc.'
+        version:
+          type: string
+          description: Browser version
+        description:
+          type: string
+          description: Short descriptive string. Often useful for displaying to users.
+        url:
+          type: string
+          description: URL to browser's webpage
+        img:
+          type: string
+          description: "URL to browser's 48px x 48px png icon"
+        active:
+          type: boolean
+          description: Is browser active and maintained?
+        vendor:
+          $ref: '#/components/schemas/Vendor'
+        engine:
+          $ref: '#/components/schemas/BrowserEngine'
+
+    BrowserEngine:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'Browser engine name, many values returned: WebKit, Gecko, Blink, etc.'
+        version:
+          type: string
+          description: Browser engine version
+        description:
+          type: string
+          description: Short descriptive string. Often useful for displaying to users.
+        url:
+          type: string
+          description: URL to browser engine's webpage
+        active:
+          type: boolean
+          description: Is browser engine active and maintained?
+        vendor:
+          $ref: '#/components/schemas/Vendor'
+
+    Vendor:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'Vendor name. Apple, Google, Microsoft, Samsung, etc.'
+        url:
+          type: string
+          description: URL to vendor's website
+
+    PostalCodeResponse:
+      type: object
+      properties:
+        continent:
+          $ref: '#/components/schemas/Continent'
+        country:
+          $ref: '#/components/schemas/Country'
+        state:
+          $ref: '#/components/schemas/State'
+        county:
+          $ref: '#/components/schemas/County'
+        city:
+          $ref: '#/components/schemas/City'
+        code:
+          $ref: '#/components/schemas/Code'
+
+    Continent:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'String representing continent name: Africa, Antarctica, Asia, Europe, North America, Oceania, South America'
+          enum:
+            - Africa
+            - Antarctica
+            - Asia
+            - Europe
+            - North America
+            - Oceania
+            - South America
+        alpha2:
+          type: string
+          description: 'String representing continent code: AF, AN, AS, EU, NA, OC, SA'
+          enum:
+            - AF
+            - AN
+            - AS
+            - EU
+            - NA
+            - OC
+            - SA
+
+    Country:
+      type: object
+      properties:
+        name:
+          type: string
+          description: String representing country name
+        alpha2:
+          type: string
+          description: ISO 3166-1 alpha-2 - two-letter country codes which are also used to create the ISO 3166-2 country subdivision codes and the Internet country code top-level domains
+        alpha3:
+          type: string
+          description: ISO 3166-1 alpha-3 - three-letter country codes which may allow a better visual association between the codes and the country names than the 3166-1 alpha-2 codes
+        numeric:
+          type: integer
+          description: ISO 3166-1 numeric – three-digit country codes which are identical to those developed and maintained by the United Nations Statistics Division, with the advantage of script (writing system) independence, and hence useful for people or systems using non-Latin scripts
+        tld:
+          type: string
+          description: Country code top-level domain
+
+    State:
+      type: object
+      properties:
+        name:
+          type: string
+          description: String representing state name. Alabama, Alaska, Arizona, California etc...
+        alpha2:
+          type: string
+          description: 'String representing state code: AL, AK, AZ, CA etc...'
+
+    County:
+      type: object
+      properties:
+        name:
+          type: string
+          description: String representing county name
+
+    City:
+      type: object
+      properties:
+        name:
+          type: string
+          description: String representing city name
+
+    Code:
+      type: object
+      properties:
+        name:
+          type: string
+          description: String representing postal code
+        latitude:
+          type: string
+          description: String representing postal code latitude
+        longitude:
+          type: string
+          description: String representing postal code longitude
+
+    DistanceResponse:
+      type: object
+      description: Response containing distance information between two postal codes
+      properties:
+        distance:
+          type: number
+          description: Distance between the two postal codes (in miles or kilometers)
+        units:
+          type: string
+          description: Units of measurement (miles or kilometers)
+        from:
+          $ref: '#/components/schemas/PostalCodeResponse'
+        to:
+          $ref: '#/components/schemas/PostalCodeResponse'
+
+    RadiusResponse:
+      type: object
+      description: Response containing list of postal codes within specified radius
+      properties:
+        center:
+          $ref: '#/components/schemas/PostalCodeResponse'
+        radius:
+          type: number
+          description: Radius used for the search
+        units:
+          type: string
+          description: Units of measurement (miles or kilometers)
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostalCodeResponse'
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: HTTP status code
+        message:
+          type: string
+          description: Detailed error message
+
+  responses:
+    BadRequest:
+      description: Bad Request - The request was unacceptable, often due to missing a required parameter.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Bad Request
+            code: 400
+            message: The request was unacceptable, often due to missing a required parameter.
+
+    Unauthorized:
+      description: Unauthorized - Invalid authentication details. API Key Invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized
+            code: 401
+            message: Invalid authentication details. API Key Invalid.
+
+    NotFound:
+      description: Not Found - The requested resource doesn't exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Not Found
+            code: 404
+            message: The requested resource doesn't exist.
+
+    TooManyRequests:
+      description: Too Many Requests - Too many requests in a given amount of time (plan upgrade needed).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Too Many Requests
+            code: 429
+            message: Too many requests in a given amount of time (plan upgrade needed).
+
+    InternalServerError:
+      description: Internal Server Error - Something went wrong on our end.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Internal Server Error
+            code: 500
+            message: Something went wrong on our end.
+
+externalDocs:
+  description: Parse API Documentation
+  url: https://parseapi.com
